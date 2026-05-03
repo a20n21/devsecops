@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE = "devsecops-app"
+    }
+
+    stages {
+
+        stage('Build') {
+            steps {
+                sh 'docker build -t $IMAGE -f docker/Dockerfile .'
+            }
+        }
+
+        stage('SonarQube') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh 'sonar-scanner -Dproject.settings=sonar/sonar-project.properties'
+                }
+            }
+        }
+
+        stage('Trivy') {
+            steps {
+                sh 'trivy image $IMAGE'
+            }
+        }
+    }
+}
