@@ -8,6 +8,9 @@ pipeline {
 
     stages {
 
+        // =========================
+        // 🔹 BUILD (PR + STAGING + PROD)
+        // =========================
         stage('Build') {
             steps {
                 sh '''
@@ -16,20 +19,30 @@ pipeline {
             }
         }
 
-        stage('SonarQube') {
+        // =========================
+        // 🔹 SONAR (PR + STAGING + PROD)
+        // =========================
+        stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar') {
-                    sh '/opt/sonar-scanner/bin/sonar-scanner -Dproject.settings=sonar/sonar-project.properties'
+                    sh '''
+                        /opt/sonar-scanner/bin/sonar-scanner \
+                        -Dproject.settings=sonar/sonar-project.properties
+                    '''
                 }
             }
         }
 
-        stage('Trivy') {
+        // =========================
+        // 🔹 TRIVY (PR + STAGING + PROD)
+        // =========================
+        stage('Security Scan (Trivy)') {
             steps {
                 sh '''
                     export TRIVY_CACHE_DIR=/tmp/trivy-cache-$BUILD_ID
 
                     trivy image \
+                        --severity CRITICAL,HIGH \
                         --format table \
                         -o trivy-report.txt \
                         $IMAGE:$TAG
@@ -37,13 +50,53 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        // =========================
+        // 🔹 DEPLOY STAGING (branch develop ou feature)
+        // =========================
+        stage('Deploy Staging') {
+            when {
+                anyOf {
+                    branch 'develop'
+                    expression { return env.BRANCH_NAME.startsWith("feature/") }
+                }
+            }
+            steps {
+                sh '''
+                    echo "Deploying to STAGING..."
+
+                    docker stop devsecops-staging || true
+                    docker rm -f devsecops-staging || true
+
+                    docker run -d \
+                        --name devsecops-staging \
+                        -p 5001:5000 \
+                        $IMAGE:$TAG
+                '''
+            }
+        }
+
+        // =========================
+        // 🔹 APPROVAL MANUAL (GATE)
+        // =========================
+        stage('Approval for Production') {
+            when {
+                branch 'main'
+            }
+            steps {
+                input message: "Approve deployment to PRODUCTION?"
+            }
+        }
+
+        // =========================
+        // 🔹 DEPLOY PROD (main only)
+        // =========================
+        stage('Deploy Production') {
             when {
                 branch 'main'
             }
             steps {
                 sh '''
-                    echo "Deploy only on main branch"
+                    echo "Deploying to PRODUCTION..."
 
                     docker stop devsecops-app || true
                     docker rm -f devsecops-app || true
