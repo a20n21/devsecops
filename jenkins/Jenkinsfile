@@ -24,16 +24,14 @@ pipeline {
         stage('Trivy - Scan Report') {
             steps {
                 sh '''
-                    trivy image --format table -o trivy-report.txt $IMAGE
+                    export TRIVY_CACHE_DIR=/tmp/trivy-cache-$BUILD_ID
+
+                    trivy image \
+                        --format table \
+                        -o trivy-report.txt \
+                        devsecops-app:latest
                 '''
             }
-        }
-
-    }
-
-    post {
-        always {
-            archiveArtifacts artifacts: 'trivy-report.txt', onlyIfSuccessful: false
         }
     }
 }
