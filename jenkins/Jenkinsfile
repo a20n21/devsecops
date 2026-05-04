@@ -9,7 +9,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'docker build -t $IMAGE -f docker/Dockerfile .'
+                sh 'docker build -t $IMAGE:latest -f docker/Dockerfile .'
             }
         }
 
@@ -29,7 +29,20 @@ pipeline {
                     trivy image \
                         --format table \
                         -o trivy-report.txt \
-                        devsecops-app:latest
+                        $IMAGE:latest
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                    docker rm -f devsecops-app || true
+
+                    docker run -d \
+                        --name devsecops-app \
+                        -p 5000:5000 \
+                        $IMAGE:latest
                 '''
             }
         }
