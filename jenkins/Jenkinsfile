@@ -3,13 +3,16 @@ pipeline {
 
     environment {
         IMAGE = "devsecops-app"
+        TAG = "${BUILD_NUMBER}"
     }
 
     stages {
 
         stage('Build') {
             steps {
-                sh 'docker build -t $IMAGE:latest -f docker/Dockerfile .'
+                sh '''
+                    docker build -t $IMAGE:$TAG -t $IMAGE:latest -f docker/Dockerfile .
+                '''
             }
         }
 
@@ -29,7 +32,7 @@ pipeline {
                     trivy image \
                         --format table \
                         -o trivy-report.txt \
-                        $IMAGE:latest
+                        $IMAGE:$TAG
                 '''
             }
         }
@@ -42,9 +45,15 @@ pipeline {
                     docker run -d \
                         --name devsecops-app \
                         -p 5000:5000 \
-                        $IMAGE:latest
+                        $IMAGE:$TAG
                 '''
             }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'trivy-report.txt', allowEmptyArchive: true
         }
     }
 }
