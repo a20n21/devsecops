@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        sonarRunner 'sonar-scanner'
+    }
+
     environment {
         IMAGE = "devsecops-app"
     }
@@ -16,10 +20,7 @@ pipeline {
         stage('SonarQube') {
             steps {
                 withSonarQubeEnv('sonar') {
-                    sh '''
-                    /opt/sonar-scanner-new/bin/sonar-scanner \
-                      -Dproject.settings=sonar/sonar-project.properties
-                    '''
+                    sh 'sonar-scanner -Dproject.settings=sonar/sonar-project.properties'
                 }
             }
         }
