@@ -15,7 +15,7 @@ pipeline {
 
         stage('SonarQube') {
             steps {
-                withSonarQubeEnv('default') {
+                withSonarQubeEnv('sonar') {
                     sh 'sonar-scanner -Dproject.settings=sonar/sonar-project.properties'
                 }
             }
