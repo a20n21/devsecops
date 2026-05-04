@@ -3,6 +3,6 @@ app = Flask(__name__)
 
 @app.route("/")
 def hello():
-    return "DevSecOps OK"
+    return "DevSecOps OK Teste"
 
 app.run(host="0.0.0.0", port=5000)
