@@ -4,11 +4,12 @@ pipeline {
     environment {
         IMAGE = "devsecops-app"
         TAG = "${BUILD_NUMBER}-${GIT_COMMIT}"
+        TRIVY_CACHE_DIR = "/tmp/trivy-cache"
     }
 
     stages {
 
-         
+        
         stage('Build') {
             steps {
                 sh '''
@@ -33,9 +34,10 @@ pipeline {
         stage('Security Scan (Trivy)') {
             steps {
                 sh '''
-                    export TRIVY_CACHE_DIR=/tmp/trivy-cache-$BUILD_ID
+                    mkdir -p $TRIVY_CACHE_DIR
 
                     trivy image \
+                        --cache-dir $TRIVY_CACHE_DIR \
                         --severity CRITICAL,HIGH \
                         --format table \
                         -o trivy-report.txt \
@@ -123,8 +125,17 @@ pipeline {
         }
     }
 
+    
     post {
         always {
+            sh '''
+                echo "Cleaning Docker resources..."
+                docker system prune -f || true
+
+                echo "Cleaning Trivy cache..."
+                rm -rf /var/lib/trivy-cache || true
+            '''
+
             archiveArtifacts artifacts: 'trivy-report.txt', allowEmptyArchive: true
         }
     }
