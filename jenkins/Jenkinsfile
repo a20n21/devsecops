@@ -32,6 +32,8 @@ pipeline {
 
                     export PYTHONPATH=.
                     pytest --cov=app --cov-report=xml
+                    echo " Validando Coverage "
+                    ls -l coverage.xml 
                 '''
             }
         }
