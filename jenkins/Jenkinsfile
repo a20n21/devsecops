@@ -40,8 +40,13 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
+                    echo "Stopping container if exists..."
+                    docker stop devsecops-app || true
+
+                    echo "Removing container if exists..."
                     docker rm -f devsecops-app || true
 
+                    echo "Starting new container..."
                     docker run -d \
                         --name devsecops-app \
                         -p 5000:5000 \
