@@ -28,11 +28,11 @@ pipeline {
                     . venv/bin/activate
 
                     python -m pip install --upgrade pip
-                    pip install -r app/requirements.txt
+                    python -m install -r app/requirements.txt
 
                     export PYTHONPATH=.
-                    pytest --cov=app --cov-report=xml
-                    echo " Validando Coverage "
+                    pytest --cov=app --cov-report=xml:coverage.xml
+                
                     ls -l coverage.xml 
                 '''
             }
