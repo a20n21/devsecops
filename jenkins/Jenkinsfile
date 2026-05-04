@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE = "devsecops-app"
         TAG = "${BUILD_NUMBER}-${GIT_COMMIT}"
-        TRIVY_CACHE_DIR = "/var/lib/trivy-cache"
+        TRIVY_CACHE_DIR = "/tmp/trivy-cache"
     }
 
     stages {
