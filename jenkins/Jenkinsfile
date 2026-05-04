@@ -31,7 +31,7 @@ pipeline {
                     python -m pip install -r app/requirements.txt
 
                     export PYTHONPATH=.
-                    pytest --cov=app --cov-report=xml:coverage.xml
+                    python -m pytest --cov=app --cov-report=xml:coverage.xml
                 
                     ls -l coverage.xml 
                 '''
