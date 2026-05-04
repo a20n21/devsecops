@@ -5,6 +5,10 @@ pipeline {
         IMAGE = "devsecops-app"
     }
 
+    tools {
+        sonarQubeScanner 'sonar-scanner'
+    }
+
     stages {
 
         stage('Build') {
@@ -15,8 +19,11 @@ pipeline {
 
         stage('SonarQube') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh 'sonar-scanner -Dproject.settings=sonar/sonar-project.properties'
+                withSonarQubeEnv('sonar') {
+                    sh '''
+                    sonar-scanner \
+                      -Dproject.settings=sonar/sonar-project.properties
+                    '''
                 }
             }
         }
