@@ -3,25 +3,21 @@ pipeline {
 
     environment {
         IMAGE = "devsecops-app"
-        TAG = "${BUILD_NUMBER}"
+        TAG = "${BUILD_NUMBER}-${GIT_COMMIT}"
     }
 
     stages {
 
-        // =========================
-        // 🔹 BUILD (PR + STAGING + PROD)
-        // =========================
+         
         stage('Build') {
             steps {
                 sh '''
-                    docker build -t $IMAGE:$TAG -t $IMAGE:latest -f docker/Dockerfile .
+                    docker build -t $IMAGE:$TAG -f docker/Dockerfile .
                 '''
             }
         }
 
-        // =========================
-        // 🔹 SONAR (PR + STAGING + PROD)
-        // =========================
+        
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar') {
@@ -33,9 +29,7 @@ pipeline {
             }
         }
 
-        // =========================
-        // 🔹 TRIVY (PR + STAGING + PROD)
-        // =========================
+        
         stage('Security Scan (Trivy)') {
             steps {
                 sh '''
@@ -50,14 +44,12 @@ pipeline {
             }
         }
 
-        // =========================
-        // 🔹 DEPLOY STAGING (branch develop ou feature)
-        // =========================
+        
         stage('Deploy Staging') {
             when {
                 anyOf {
                     branch 'develop'
-                    expression { return env.BRANCH_NAME.startsWith("feature/") }
+                    expression { return env.BRANCH_NAME?.startsWith("feature/") }
                 }
             }
             steps {
@@ -75,9 +67,7 @@ pipeline {
             }
         }
 
-        // =========================
-        // 🔹 APPROVAL MANUAL (GATE)
-        // =========================
+        
         stage('Approval for Production') {
             when {
                 branch 'main'
@@ -87,24 +77,47 @@ pipeline {
             }
         }
 
-        // =========================
-        // 🔹 DEPLOY PROD (main only)
-        // =========================
+        
         stage('Deploy Production') {
             when {
                 branch 'main'
             }
             steps {
                 sh '''
-                    echo "Deploying to PRODUCTION..."
+                    PREVIOUS=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep devsecops-app | grep -v "$TAG" | head -n 1 || true)
 
+                    echo "Stopping current container..."
                     docker stop devsecops-app || true
                     docker rm -f devsecops-app || true
 
+                    echo "Starting new version..."
                     docker run -d \
                         --name devsecops-app \
                         -p 5000:5000 \
                         $IMAGE:$TAG
+
+                    echo "Waiting health check..."
+                    sleep 5
+
+                    curl -f http://localhost:5000/ || {
+                        echo "DEPLOY FAILED - ROLLBACK INITIATED"
+
+                        docker stop devsecops-app || true
+                        docker rm -f devsecops-app || true
+
+                        if [ ! -z "$PREVIOUS" ]; then
+                            echo "Rolling back to previous image: $PREVIOUS"
+
+                            docker run -d \
+                                --name devsecops-app \
+                                -p 5000:5000 \
+                                $PREVIOUS
+                        else
+                            echo "No previous version found"
+                        fi
+
+                        exit 1
+                    }
                 '''
             }
         }
