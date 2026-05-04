@@ -84,7 +84,7 @@ HTML_TEMPLATE = """
 
                 <div class="flex items-center text-sm text-slate-500">
                     <span class="flex h-3 w-3 rounded-full bg-emerald-500 mr-3 animate-pulse"></span>
-                    Sistemas operacionais e estáveis.
+                    Sistemas operacionais, resilientes e estáveis.
                 </div>
             </div>
         </div>
