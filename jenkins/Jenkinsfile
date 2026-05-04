@@ -18,15 +18,17 @@ pipeline {
             }
         }
 
-      
+        
         stage('Tests + Coverage') {
             steps {
                 sh '''
+                    set -e
+
                     python3 -m venv venv
                     . venv/bin/activate
 
+                    python -m pip install --upgrade pip
                     pip install -r app/requirements.txt
-                    pip install pytest pytest-cov
 
                     export PYTHONPATH=.
                     pytest --cov=app --cov-report=xml
@@ -47,6 +49,15 @@ pipeline {
         }
 
         
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        
         stage('Security Scan (Trivy)') {
             steps {
                 sh '''
@@ -62,7 +73,7 @@ pipeline {
             }
         }
 
-     
+       
         stage('Deploy Staging') {
             when {
                 anyOf {
@@ -85,7 +96,7 @@ pipeline {
             }
         }
 
-       
+        
         stage('Approval for Production') {
             when {
                 branch 'main'
@@ -95,7 +106,9 @@ pipeline {
             }
         }
 
-        
+        // =========================
+        // 🔹 DEPLOY PROD + ROLLBACK
+        // =========================
         stage('Deploy Production') {
             when {
                 branch 'main'
