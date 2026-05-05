@@ -41,7 +41,7 @@ HTML_TEMPLATE = """
             <!-- Header Section -->
             <div class="mb-10 text-center md:text-left">
                 <h1 class="text-3xl font-extrabold mb-2">DevSecOps Pipeline Status</h1>
-                <p class="text-slate-400">Monitoramento em tempo real da infraestrutura e aplicações.</p>
+                <p class="text-slate-400">Monitoramento em tempo real da infraestrutura e aplicações em Python.</p>
             </div>
 
             <!-- Stats Grid -->
