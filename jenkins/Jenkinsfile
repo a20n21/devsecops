@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    options {
+        disableConcurrentBuilds()  
+        timestamps()
+    }
+
     environment {
         IMAGE = "devsecops-app"
         TAG = "${BUILD_NUMBER}-${GIT_COMMIT}"
@@ -32,8 +37,8 @@ pipeline {
 
                     export PYTHONPATH=.
                     python -m pytest --cov=app --cov-report=xml:coverage.xml
-                
-                    ls -l coverage.xml 
+
+                    ls -l coverage.xml
                 '''
             }
         }
@@ -53,7 +58,7 @@ pipeline {
         
         stage('Quality Gate') {
             steps {
-                timeout(time: 2, unit: 'MINUTES') {
+                timeout(time: 5, unit: 'MINUTES') {   
                     waitForQualityGate abortPipeline: true
                 }
             }
@@ -75,7 +80,7 @@ pipeline {
             }
         }
 
-       
+        
         stage('Deploy Staging') {
             when {
                 anyOf {
@@ -108,16 +113,19 @@ pipeline {
             }
         }
 
-        // =========================
-        // 🔹 DEPLOY PROD + ROLLBACK
-        // =========================
+        
         stage('Deploy Production') {
             when {
                 branch 'main'
             }
             steps {
                 sh '''
-                    PREVIOUS=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep devsecops-app | grep -v "$TAG" | head -n 1 || true)
+                    set -e
+
+                    PREVIOUS=$(docker images --format "{{.Repository}}:{{.Tag}}" \
+                        | grep devsecops-app \
+                        | grep -v "$TAG" \
+                        | head -n 1 || true)
 
                     echo "Stopping current container..."
                     docker stop devsecops-app || true
@@ -130,9 +138,9 @@ pipeline {
                         $IMAGE:$TAG
 
                     echo "Waiting health check..."
-                    sleep 5
+                    sleep 8
 
-                    curl -f http://localhost:5000/ || {
+                    if ! curl -f http://localhost:5000/; then
                         echo "DEPLOY FAILED - ROLLBACK INITIATED"
 
                         docker stop devsecops-app || true
@@ -150,13 +158,13 @@ pipeline {
                         fi
 
                         exit 1
-                    }
+                    fi
                 '''
             }
         }
     }
 
-    
+   
     post {
         always {
             sh '''
