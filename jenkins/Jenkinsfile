@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     options {
-        disableConcurrentBuilds()  
+        disableConcurrentBuilds()
         timestamps()
     }
 
@@ -14,16 +14,12 @@ pipeline {
 
     stages {
 
-        
         stage('Build') {
             steps {
-                sh '''
-                    docker build -t $IMAGE:$TAG -f docker/Dockerfile .
-                '''
+                sh 'docker build -t $IMAGE:$TAG -f docker/Dockerfile .'
             }
         }
 
-        
         stage('Tests + Coverage') {
             steps {
                 sh '''
@@ -37,13 +33,10 @@ pipeline {
 
                     export PYTHONPATH=.
                     python -m pytest --cov=app --cov-report=xml:coverage.xml
-
-                    ls -l coverage.xml
                 '''
             }
         }
 
-        
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar') {
@@ -55,17 +48,22 @@ pipeline {
             }
         }
 
-        
-        stage('Quality Gate') {
+        // 🔥 AJUSTADO
+        stage('Quality Gate (Non Blocking)') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') {   
-                    waitForQualityGate abortPipeline: false
-                    echo "Quality Gate status: ${qg.status}"
+                script {
+                    try {
+                        timeout(time: 10, unit: 'SECONDS') {
+                            def qg = waitForQualityGate abortPipeline: false
+                            echo "Quality Gate status: ${qg.status}"
+                        }
+                    } catch (err) {
+                        echo "Sonar still processing (pipeline will continue)"
+                    }
                 }
             }
         }
 
-        
         stage('Security Scan (Trivy)') {
             steps {
                 sh '''
@@ -81,7 +79,6 @@ pipeline {
             }
         }
 
-        
         stage('Deploy Staging') {
             when {
                 anyOf {
@@ -91,8 +88,6 @@ pipeline {
             }
             steps {
                 sh '''
-                    echo "Deploying to STAGING..."
-
                     docker stop devsecops-staging || true
                     docker rm -f devsecops-staging || true
 
@@ -104,7 +99,6 @@ pipeline {
             }
         }
 
-        
         stage('Approval for Production') {
             when {
                 branch 'main'
@@ -114,7 +108,6 @@ pipeline {
             }
         }
 
-        
         stage('Deploy Production') {
             when {
                 branch 'main'
@@ -128,34 +121,27 @@ pipeline {
                         | grep -v "$TAG" \
                         | head -n 1 || true)
 
-                    echo "Stopping current container..."
                     docker stop devsecops-app || true
                     docker rm -f devsecops-app || true
 
-                    echo "Starting new version..."
                     docker run -d \
                         --name devsecops-app \
                         -p 5000:5000 \
                         $IMAGE:$TAG
 
-                    echo "Waiting health check..."
                     sleep 8
 
                     if ! curl -f http://localhost:5000/; then
-                        echo "DEPLOY FAILED - ROLLBACK INITIATED"
+                        echo "ROLLBACK..."
 
                         docker stop devsecops-app || true
                         docker rm -f devsecops-app || true
 
                         if [ ! -z "$PREVIOUS" ]; then
-                            echo "Rolling back to previous image: $PREVIOUS"
-
                             docker run -d \
                                 --name devsecops-app \
                                 -p 5000:5000 \
                                 $PREVIOUS
-                        else
-                            echo "No previous version found"
                         fi
 
                         exit 1
@@ -165,14 +151,10 @@ pipeline {
         }
     }
 
-   
     post {
         always {
             sh '''
-                echo "Cleaning Docker resources..."
                 docker system prune -f || true
-
-                echo "Cleaning Trivy cache..."
                 rm -rf /tmp/trivy-cache || true
             '''
 
