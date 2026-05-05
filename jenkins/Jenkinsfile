@@ -9,7 +9,7 @@ pipeline {
     environment {
         IMAGE = "devsecops-app"
         TAG = "${BUILD_NUMBER}-${GIT_COMMIT}"
-        TRIVY_CACHE_DIR = "/tmp/trivy-cache"
+        TRIVY_CACHE_DIR = "/tmp/trivy-cache-${BUILD_ID}"
     }
 
     stages {
