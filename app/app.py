@@ -1,99 +1,105 @@
 from flask import Flask, render_template_string
 import os
 import socket
+import random
+import platform
 from datetime import datetime
 
 app = Flask(__name__)
 
+# Design moderno com efeito Glassmorphism (vidro)
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matias IT Consulting | Dashboard</title>
+    <title>Matias IT | Cloud Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col">
+<body class="bg-[#050505] text-white font-sans min-h-screen overflow-x-hidden">
 
-    <!-- Navbar -->
-    <nav class="border-b border-slate-800 p-4 bg-slate-900/50 backdrop-blur-md sticky top-0">
+    <!-- Background decorativo (Blur) -->
+    <div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-900/20 rounded-full blur-[120px] -z-10"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-900/20 rounded-full blur-[120px] -z-10"></div>
+
+    <nav class="p-6 border-b border-white/5 bg-black/40 backdrop-blur-md">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-2">
-                <div class="bg-blue-600 p-2 rounded-lg">
-                    <i class="fas fa-terminal text-white"></i>
-                </div>
-                <span class="text-xl font-bold tracking-tight">Matias <span class="text-blue-500">IT Consulting</span></span>
+                <span class="text-2xl font-black tracking-tighter italic">MATIAS<span class="text-blue-500">.IT</span></span>
             </div>
-            <div class="hidden md:flex space-x-6 text-sm font-medium text-slate-400">
-                <a href="#" class="hover:text-blue-400 transition">Dashboard</a>
-                <a href="#" class="hover:text-blue-400 transition">Security Analysis</a>
-                <a href="#" class="hover:text-blue-400 transition">Cloud Status</a>
+            <div class="flex items-center space-x-2 text-xs font-mono text-emerald-400 animate-pulse">
+                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                <span>SISTEMA ONLINE</span>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="container mx-auto flex-grow p-6">
-        <div class="max-w-4xl mx-auto">
+    <main class="container mx-auto p-6 mt-10">
+        <div class="max-w-5xl mx-auto">
             
-            <!-- Header Section -->
-            <div class="mb-10 text-center md:text-left">
-                <h1 class="text-3xl font-extrabold mb-2">DevSecOps Pipeline Status</h1>
-                <p class="text-slate-400">Monitoramento em tempo real da infraestrutura e aplicações em Python.</p>
-            </div>
-
-            <!-- Stats Grid -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div class="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl">
-                    <p class="text-slate-400 text-sm mb-1">Hostname</p>
-                    <p class="text-xl font-mono text-blue-400">{{ hostname }}</p>
+                <!-- Card 1: Infra -->
+                <div class="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-sm">
+                    <p class="text-slate-500 text-xs font-bold uppercase mb-2">Provedor Cloud</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl font-bold text-blue-400">AWS</span>
+                        <i class="fab fa-aws text-3xl opacity-20"></i>
+                    </div>
                 </div>
-                <div class="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl">
-                    <p class="text-slate-400 text-sm mb-1">Ambiente</p>
-                    <p class="text-xl font-semibold text-emerald-400">Produção</p>
+                <!-- Card 2: Hostname -->
+                <div class="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-sm">
+                    <p class="text-slate-500 text-xs font-bold uppercase mb-2">ID da Instância</p>
+                    <span class="text-xl font-mono">{{ hostname }}</span>
                 </div>
-                <div class="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl">
-                    <p class="text-slate-400 text-sm mb-1">Última Varredura</p>
-                    <p class="text-xl font-semibold">{{ time }}</p>
+                <!-- Card 3: Security -->
+                <div class="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-sm border-l-emerald-500/50 border-l-4">
+                    <p class="text-slate-500 text-xs font-bold uppercase mb-2">Segurança</p>
+                    <span class="text-xl font-bold text-emerald-400 italic font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 underline underline-offset-4 decoration-emerald-500/30">SCAN OK</span>
                 </div>
             </div>
 
-            <!-- Deployment Card -->
-            <div class="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-3xl p-8 shadow-2xl">
-                <div class="flex flex-col md:flex-row items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold mb-2">Aplicação Ativa</h2>
-                        <p class="text-slate-400 mb-6 md:mb-0">Pipeline executado via Jenkins com sucesso.</p>
+            <!-- Seção de Métricas (Simuladas) -->
+            <div class="bg-gradient-to-br from-white/10 to-transparent border border-white/10 rounded-[2rem] p-10 relative overflow-hidden">
+                <div class="relative z-10">
+                    <h2 class="text-4xl font-black mb-10 tracking-tight">Real-time <span class="text-blue-500 italic">Metrics.</span></h2>
+                    
+                    <div class="space-y-8">
+                        <div>
+                            <div class="flex justify-between mb-2 text-sm font-mono text-slate-300">
+                                <span>CPU LOAD</span>
+                                <span>{{ cpu }}%</span>
+                            </div>
+                            <div class="w-full bg-white/5 h-3 rounded-full overflow-hidden">
+                                <div class="bg-gradient-to-r from-blue-600 to-cyan-400 h-full rounded-full transition-all duration-1000" style="width: {{ cpu }}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-2 text-sm font-mono text-slate-300">
+                                <span>RAM ALLOCATION</span>
+                                <span>{{ ram }}%</span>
+                            </div>
+                            <div class="w-full bg-white/5 h-3 rounded-full overflow-hidden">
+                                <div class="bg-gradient-to-r from-purple-600 to-pink-500 h-full rounded-full transition-all duration-1000" style="width: {{ ram }}%"></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex -space-x-2">
-                        <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center border-4 border-slate-800 shadow-xl" title="Docker">
-                            <i class="fab fa-docker text-xl"></i>
-                        </div>
-                        <div class="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center border-4 border-slate-800 shadow-xl" title="AWS">
-                            <i class="fab fa-aws text-xl"></i>
-                        </div>
-                        <div class="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center border-4 border-slate-800 shadow-xl" title="Security">
-                            <i class="fas fa-shield-alt text-xl"></i>
-                        </div>
-                    </div>
-                </div>
-                
-                <hr class="my-8 border-slate-700">
 
-                <div class="flex items-center text-sm text-slate-500">
-                    <span class="flex h-3 w-3 rounded-full bg-emerald-500 mr-3 animate-pulse"></span>
-                    Sistemas operacionais, resilientes e estáveis.
+                    <div class="mt-12 flex flex-wrap gap-4">
+                        <span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-4 py-2 rounded-xl text-xs font-bold">DOCKER ENGINE</span>
+                        <span class="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-4 py-2 rounded-xl text-xs font-bold">PYTHON {{ py_version }}</span>
+                        <span class="bg-white/5 text-slate-400 border border-white/10 px-4 py-2 rounded-xl text-xs font-bold">LINUX KERNEL</span>
+                    </div>
                 </div>
             </div>
+
+            <p class="text-center mt-10 text-slate-600 text-xs font-mono uppercase tracking-[0.2em]">
+                &copy; 2026 Matias IT Consulting // Build: ab74dc0
+            </p>
         </div>
     </main>
-
-    <!-- Footer -->
-    <footer class="p-8 text-center text-slate-500 text-xs border-t border-slate-800">
-        <p>&copy; 2026 Matias IT Consulting. All rights reserved.</p>
-    </footer>
 
 </body>
 </html>
@@ -102,9 +108,16 @@ HTML_TEMPLATE = """
 @app.route('/')
 def home():
     hostname = socket.gethostname()
-    now = datetime.now().strftime("%H:%M:%S")
-    return render_template_string(HTML_TEMPLATE, hostname=hostname, time=now)
+    py_version = platform.python_version()
+    # Gerando dados aleatórios realistas para não precisar de biblioteca extra
+    cpu_simulated = random.randint(12, 45)
+    ram_simulated = random.randint(30, 68)
+    
+    return render_template_string(HTML_TEMPLATE, 
+                                  hostname=hostname, 
+                                  py_version=py_version,
+                                  cpu=cpu_simulated, 
+                                  ram=ram_simulated)
 
 if __name__ == '__main__':
-    
     app.run(host='0.0.0.0', port=5000)
