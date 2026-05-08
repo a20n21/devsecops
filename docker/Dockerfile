@@ -1,25 +1,11 @@
 FROM python:3.9-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
 WORKDIR /app
 
+COPY app/requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN addgroup --system python && adduser --system --group python
-
-
-RUN pip install --no-cache-dir flask
-
-
-COPY app/ .
-
-
-RUN chown -R python:python /app
-
-
-USER python
-
+COPY app/ /app/
 
 EXPOSE 5000
 

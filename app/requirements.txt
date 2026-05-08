@@ -1,3 +1,4 @@
 flask
-pytest
-pytest-cov
+psutil
+prometheus-flask-exporter
+prometheus_client
